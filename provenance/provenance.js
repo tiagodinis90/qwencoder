@@ -151,12 +151,14 @@ function safePath(filePath, evidenceDir) {
   const resolvedDir = path.resolve(evidenceDir);
   const resolvedFile = path.resolve(evidenceDir, filePath);
 
-  // Resolve the real path of the evidence directory (follows symlinks)
+  // Resolve the real path of the evidence directory (follows symlinks).
+  // Only ENOENT is tolerated (directory doesn't exist yet); any other
+  // filesystem error (e.g. EACCES) must propagate, not be suppressed.
   let realDir;
   try {
     realDir = fs.realpathSync(resolvedDir);
   } catch (err) {
-    // Directory doesn't exist — use the resolved path as-is
+    if (err.code !== 'ENOENT') throw err;
     realDir = resolvedDir;
   }
 
@@ -165,12 +167,14 @@ function safePath(filePath, evidenceDir) {
   try {
     realFile = fs.realpathSync(resolvedFile);
   } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
     // File doesn't exist — resolve the parent directory's real path
     const parent = path.dirname(resolvedFile);
     const base = path.basename(resolvedFile);
     try {
       realFile = path.join(fs.realpathSync(parent), base);
     } catch (parentErr) {
+      if (parentErr.code !== 'ENOENT') throw parentErr;
       // Parent doesn't exist either — use the resolved path as-is
       realFile = resolvedFile;
     }

@@ -8,7 +8,7 @@
 
 'use strict';
 
-const { describe, it, before, after } = require('node:test');
+const { describe, it, before, after, skip } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
@@ -249,27 +249,81 @@ describe('Path Safety', () => {
     });
 
     it('rejects symlink escape from evidence directory', () => {
-      const tmpDir = path.join(os.tmpdir(), 'provenance-symlink-test');
-      const evDir = path.join(tmpDir, 'evidence');
-      const outDir = path.join(tmpDir, 'outside');
-      fs.mkdirSync(evDir, { recursive: true });
-      fs.mkdirSync(outDir, { recursive: true });
-      const outsideFile = path.join(outDir, 'secret.txt');
-      fs.writeFileSync(outsideFile, 'secret');
-      const linkPath = path.join(evDir, 'escape');
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prov-symlink-'));
       try {
-        fs.symlinkSync(outsideFile, linkPath);
-      } catch (e) {
-        // Symlinks may be unavailable on some platforms — skip
+        const evDir = path.join(tmpDir, 'evidence');
+        const outDir = path.join(tmpDir, 'outside');
+        fs.mkdirSync(evDir, { recursive: true });
+        fs.mkdirSync(outDir, { recursive: true });
+        const outsideFile = path.join(outDir, 'secret.txt');
+        fs.writeFileSync(outsideFile, 'secret');
+        const linkPath = path.join(evDir, 'escape');
+        if (process.platform === 'win32') {
+          // Junctions can only target directories on Windows
+          try {
+            fs.symlinkSync(outDir, linkPath, 'junction');
+          } catch (e) {
+            skip(`Junction creation not supported: ${e.message}`);
+            return;
+          }
+          assert.throws(
+            () => safePath('escape/secret.txt', evDir),
+            { message: /traversal/i },
+            'Must reject junction pointing outside evidence directory'
+          );
+        } else {
+          try {
+            fs.symlinkSync(outsideFile, linkPath, 'dir');
+          } catch (e) {
+            skip(`Symlink creation not supported on this platform: ${e.message}`);
+            return;
+          }
+          assert.throws(
+            () => safePath('escape', evDir),
+            { message: /traversal/i },
+            'Must reject symlink pointing outside evidence directory'
+          );
+        }
+      } finally {
         fs.rmSync(tmpDir, { recursive: true, force: true });
-        return;
       }
-      assert.throws(
-        () => safePath('escape', evDir),
-        { message: /traversal/i },
-        'Must reject symlink pointing outside evidence directory'
-      );
-      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    it('rejects junction escape with intermediate directory junction', { skip: process.platform !== 'win32' }, () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prov-junction-'));
+      try {
+        const evDir = path.join(tmpDir, 'evidence');
+        const outDir = path.join(tmpDir, 'outside');
+        const intermediateDir = path.join(tmpDir, 'intermediate');
+        fs.mkdirSync(evDir, { recursive: true });
+        fs.mkdirSync(outDir, { recursive: true });
+        fs.mkdirSync(intermediateDir, { recursive: true });
+        const outsideFile = path.join(outDir, 'secret.txt');
+        fs.writeFileSync(outsideFile, 'secret');
+        // Create intermediate junction pointing outside
+        const intermediateLink = path.join(intermediateDir, 'link-to-outside');
+        try {
+          fs.symlinkSync(outDir, intermediateLink, 'junction');
+        } catch (e) {
+          skip(`Junction creation not supported: ${e.message}`);
+          return;
+        }
+        // Create junction inside evidence pointing to intermediate
+        const evLink = path.join(evDir, 'junction-escape');
+        try {
+          fs.symlinkSync(intermediateLink, evLink, 'junction');
+        } catch (e) {
+          skip(`Junction creation not supported: ${e.message}`);
+          return;
+        }
+        assert.throws(
+          () => safePath('junction-escape/secret.txt', evDir),
+          { message: /traversal/i },
+          'Must reject junction chain pointing outside evidence directory'
+        );
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
     });
   });
 
