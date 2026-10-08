@@ -8,7 +8,7 @@
 
 'use strict';
 
-const { describe, it, before, after, skip } = require('node:test');
+const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
@@ -248,7 +248,7 @@ describe('Path Safety', () => {
       );
     });
 
-    it('rejects symlink escape from evidence directory', () => {
+    it('rejects symlink escape from evidence directory', (t) => {
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prov-symlink-'));
       try {
         const evDir = path.join(tmpDir, 'evidence');
@@ -263,7 +263,7 @@ describe('Path Safety', () => {
           try {
             fs.symlinkSync(outDir, linkPath, 'junction');
           } catch (e) {
-            skip(`Junction creation not supported: ${e.message}`);
+            t.skip(`Junction creation not supported: ${e.message}`);
             return;
           }
           assert.throws(
@@ -275,7 +275,7 @@ describe('Path Safety', () => {
           try {
             fs.symlinkSync(outsideFile, linkPath, 'dir');
           } catch (e) {
-            skip(`Symlink creation not supported on this platform: ${e.message}`);
+            t.skip(`Symlink creation not supported on this platform: ${e.message}`);
             return;
           }
           assert.throws(
@@ -289,7 +289,7 @@ describe('Path Safety', () => {
       }
     });
 
-    it('rejects junction escape with intermediate directory junction', { skip: process.platform !== 'win32' }, () => {
+    it('rejects junction escape with intermediate directory junction', { skip: process.platform !== 'win32' }, (t) => {
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prov-junction-'));
       try {
         const evDir = path.join(tmpDir, 'evidence');
@@ -305,7 +305,7 @@ describe('Path Safety', () => {
         try {
           fs.symlinkSync(outDir, intermediateLink, 'junction');
         } catch (e) {
-          skip(`Junction creation not supported: ${e.message}`);
+          t.skip(`Junction creation not supported: ${e.message}`);
           return;
         }
         // Create junction inside evidence pointing to intermediate
@@ -313,7 +313,7 @@ describe('Path Safety', () => {
         try {
           fs.symlinkSync(intermediateLink, evLink, 'junction');
         } catch (e) {
-          skip(`Junction creation not supported: ${e.message}`);
+          t.skip(`Junction creation not supported: ${e.message}`);
           return;
         }
         assert.throws(
