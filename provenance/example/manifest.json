@@ -1,9 +1,9 @@
 {
   "evidenceDir": "./evidence",
-  "generated": "RUN_GENERATE_SCRIPT",
-  "note": "SYNTHETIC DATA - Test fixture only. Not real environmental evidence. Run 'node generate-manifest.js' to populate hashes.",
+  "generated": "2026-10-08T20:59:30.596Z",
+  "note": "SYNTHETIC DATA - Test fixture only. Not real environmental evidence.",
   "files": {
-    "synthetic-station-readings.csv": "REPLACE_WITH_ACTUAL_HASH",
-    "synthetic-station-metadata.json": "REPLACE_WITH_ACTUAL_HASH"
+    "synthetic-station-metadata.json": "2ffe568127879462a15244bc2fdd37ab98a326ca327155b50de63237c6c3cb0a",
+    "synthetic-station-readings.csv": "bcb93bf774b729086670ed60dfa1cedc815a2671841e72ede34e015a820a28ee"
   }
 }

@@ -241,13 +241,37 @@ describe('Path Safety', () => {
   });
 
   it('rejects encoded traversal attempts', () => {
-    assert.throws(
-      () => safePath('data/../../../etc/shadow', evidenceDir),
-      { message: /traversal/i },
-      'Must reject encoded traversal'
-    );
+      assert.throws(
+        () => safePath('data/../../../etc/shadow', evidenceDir),
+        { message: /traversal/i },
+        'Must reject encoded traversal'
+      );
+    });
+
+    it('rejects symlink escape from evidence directory', () => {
+      const tmpDir = path.join(os.tmpdir(), 'provenance-symlink-test');
+      const evDir = path.join(tmpDir, 'evidence');
+      const outDir = path.join(tmpDir, 'outside');
+      fs.mkdirSync(evDir, { recursive: true });
+      fs.mkdirSync(outDir, { recursive: true });
+      const outsideFile = path.join(outDir, 'secret.txt');
+      fs.writeFileSync(outsideFile, 'secret');
+      const linkPath = path.join(evDir, 'escape');
+      try {
+        fs.symlinkSync(outsideFile, linkPath);
+      } catch (e) {
+        // Symlinks may be unavailable on some platforms — skip
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+        return;
+      }
+      assert.throws(
+        () => safePath('escape', evDir),
+        { message: /traversal/i },
+        'Must reject symlink pointing outside evidence directory'
+      );
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
   });
-});
 
 // ─── Manifest Verification Tests ─────────────────────────────────────────────
 
