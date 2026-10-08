@@ -151,14 +151,43 @@ function safePath(filePath, evidenceDir) {
   const resolvedDir = path.resolve(evidenceDir);
   const resolvedFile = path.resolve(evidenceDir, filePath);
 
-  // Ensure the resolved path is within the evidence directory
-  if (!resolvedFile.startsWith(resolvedDir + path.sep) && resolvedFile !== resolvedDir) {
+  // Resolve the real path of the evidence directory (follows symlinks).
+  // Only ENOENT is tolerated (directory doesn't exist yet); any other
+  // filesystem error (e.g. EACCES) must propagate, not be suppressed.
+  let realDir;
+  try {
+    realDir = fs.realpathSync(resolvedDir);
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    realDir = resolvedDir;
+  }
+
+  // Resolve symlinks/junctions if the file exists; otherwise resolve the parent
+  let realFile;
+  try {
+    realFile = fs.realpathSync(resolvedFile);
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    // File doesn't exist — resolve the parent directory's real path
+    const parent = path.dirname(resolvedFile);
+    const base = path.basename(resolvedFile);
+    try {
+      realFile = path.join(fs.realpathSync(parent), base);
+    } catch (parentErr) {
+      if (parentErr.code !== 'ENOENT') throw parentErr;
+      // Parent doesn't exist either — use the resolved path as-is
+      realFile = resolvedFile;
+    }
+  }
+
+  // Ensure the real path is within the evidence directory
+  if (!realFile.startsWith(realDir + path.sep) && realFile !== realDir) {
     throw new Error(
       `Path traversal detected: "${filePath}" resolves outside evidence directory "${evidenceDir}"`
     );
   }
 
-  return resolvedFile;
+  return realFile;
 }
 
 // ─── Manifest Verification ───────────────────────────────────────────────────
