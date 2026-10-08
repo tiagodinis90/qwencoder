@@ -1,0 +1,9 @@
+{
+  "evidenceDir": "./evidence",
+  "generated": "RUN_GENERATE_SCRIPT",
+  "note": "SYNTHETIC DATA - Test fixture only. Not real environmental evidence. Run 'node generate-manifest.js' to populate hashes.",
+  "files": {
+    "synthetic-station-readings.csv": "REPLACE_WITH_ACTUAL_HASH",
+    "synthetic-station-metadata.json": "REPLACE_WITH_ACTUAL_HASH"
+  }
+}
