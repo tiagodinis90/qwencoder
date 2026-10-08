@@ -1,0 +1,15 @@
+{
+  "station_id": "SYNTH-001",
+  "location": {
+    "latitude": 51.5074,
+    "longitude": -0.1278,
+    "elevation_m": 11.0
+  },
+  "deployment_date": "2024-01-01",
+  "sensor_types": ["temperature", "humidity"],
+  "calibration": {
+    "last_calibrated": "2023-12-15",
+    "certificate_id": "SYNTH-CAL-2023-001"
+  },
+  "notes": "SYNTHETIC DATA - This is a test fixture. Not real environmental data."
+}

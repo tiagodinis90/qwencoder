@@ -1,0 +1,5 @@
+timestamp,station_id,sensor_type,value,unit,quality_flag
+2024-01-15T08:00:00Z,SYNTH-001,temperature,12.3,celsius,OK
+2024-01-15T08:00:00Z,SYNTH-001,humidity,78.5,percent,OK
+2024-01-15T09:00:00Z,SYNTH-001,temperature,13.1,celsius,OK
+2024-01-15T09:00:00Z,SYNTH-001,humidity,76.2,percent,OK
